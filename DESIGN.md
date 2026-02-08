@@ -363,7 +363,7 @@ Possible graph analyses:
 - **Trust paths:** Estimate transitive trust (A trusts B, B trusts C → A has indirect signal about C)
 - **Anomaly detection:** Flag entities with unusual relational patterns
 
-TODO: Define standard graph export format (likely adjacency list with edge weights derived from scoring).
+A standard graph export format is under consideration (likely adjacency list with edge weights derived from scoring).
 
 ## Deployment Strategy
 

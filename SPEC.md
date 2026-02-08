@@ -821,7 +821,7 @@ Even with encryption, HARP leaks metadata. Implementations MUST be aware of what
 
 HARP nodes SHOULD implement document padding for shared-layer encrypted blobs. The recommended bucket sizes are: 1KB, 4KB, 16KB, 64KB, 256KB, 1MB. Pad to the next bucket boundary.
 
-TODO: OPEN QUESTION — Should onchain dyad pointers use the raw dyad ID hash, or a blinded commitment that requires knowledge of one entity's key to link to the dyad?
+⚡ Open Question: Should onchain dyad pointers use the raw dyad ID hash, or a blinded commitment that requires knowledge of one entity's key to link to the dyad?
 
 ### 7.5 Consent
 
@@ -902,7 +902,7 @@ Consuming agents MUST NOT treat HARP signature verification as proof that conten
 | **Epoch chain tampering** — Attacker modifies historical epochs | CID chain integrity — modifying any epoch changes all subsequent CIDs. Onchain pointers provide a trusted root. Each epoch is independently signed. |
 | **Spam dyad proposals** — Flooding entities with proposals | Transport-layer protections gate proposals: AIRC consent model, A2A endpoint authentication, rate limiting at HARP node level. Entities can block at the transport layer. |
 | **Replay attacks** — Resubmitting old signed documents as new | Epoch numbers are monotonically increasing. A valid document with epoch ≤ current epoch is a replay and MUST be rejected. Onchain pointer provides the current epoch anchor. Request timestamps (§6.3) prevent query replays. |
-| **Sybil attacks** — Creating many fake identities to game reputation | ERC-8004 registration has onchain cost. Scoring derivation (§9) SHOULD weight dyad age and interaction volume, making fresh sybil dyads less valuable. TODO: OPEN QUESTION — Should HARP define minimum dyad age requirements for trust derivation? |
+| **Sybil attacks** — Creating many fake identities to game reputation | ERC-8004 registration has onchain cost. Scoring derivation (§9) SHOULD weight dyad age and interaction volume, making fresh sybil dyads less valuable. ⚡ Open Question: Should HARP define minimum dyad age requirements for trust derivation? |
 | **Context poisoning** — Deliberately writing misleading relational context | Authorship is signed and attributable. Bilateral attestation (`acknowledged_by`) provides a cross-check. Consuming agents SHOULD discount unilateral claims. Dispute mechanism via `harp_dispute` messages (delivered through the transport layer). |
 | **Metadata leakage** — Observer learns from traffic patterns | See §7.4 for detailed metadata leakage analysis and mitigations. |
 | **Key compromise** — Entity's private key is stolen | See §7.8 for key management and compromise response. |
@@ -936,7 +936,7 @@ Consuming agents MUST NOT treat HARP signature verification as proof that conten
 4. **Audit**: All epochs signed with the compromised key after the estimated compromise time SHOULD be flagged as suspect. Dyad partners can request re-attestation.
 5. **Accept the loss**: Historical shared-layer documents encrypted with the old key must be assumed compromised. There is no way to un-reveal data that an attacker has already decrypted.
 
-TODO: OPEN QUESTION — Should HARP support key pre-rotation (registering a "next key" in advance) to reduce the window of vulnerability during compromise?
+⚡ Open Question: Should HARP support key pre-rotation (registering a "next key" in advance) to reduce the window of vulnerability during compromise?
 
 **Key recovery:** HARP does not define a key recovery mechanism. If an entity loses their private key (not compromise — loss), they lose access to all shared-layer encrypted documents. They can register a new key and re-establish relationships, but historical shared-layer data is unrecoverable. This is by design — a recovery mechanism would be an attack surface.
 
@@ -1655,7 +1655,7 @@ At scale, the HARP dyad network forms a social graph. Graph analysis can reveal:
 - Bridge entities that connect otherwise separate clusters
 - Trust propagation paths (A trusts B, B trusts C — transitive trust estimation)
 
-TODO: Define a standard graph export format for HARP networks.
+A standard graph export format for HARP networks is under consideration.
 
 ---
 
@@ -1834,7 +1834,7 @@ When the schema version changes:
 - A new epoch is created with the updated `harp` version
 - The `previous` field links to the last epoch under the old schema
 - Both old and new epochs remain accessible via their CIDs
-- TODO: Define automated migration tooling
+- Automated migration tooling is planned for a future specification revision
 
 ---
 

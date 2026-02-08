@@ -233,7 +233,7 @@ Nonces are prepended to the ciphertext and are not secret. The encrypted blob fo
 
 **Residual risk**: A sufficiently motivated adversary with access to IPFS node logs, onchain indexers, and network-level traffic analysis can correlate metadata signals. Full metadata privacy requires transport-level protections (Tor, mixnets) that are outside HARP's scope.
 
-TODO: OPEN QUESTION — Should HARP specify a recommended transport-level privacy mechanism, or leave it entirely to implementations?
+⚡ Open Question: Should HARP specify a recommended transport-level privacy mechanism, or leave it entirely to implementations?
 
 ### 4.5 Key Compromise
 
@@ -253,7 +253,7 @@ TODO: OPEN QUESTION — Should HARP specify a recommended transport-level privac
 
 **Residual risk**: Between compromise and detection, the attacker operates with full entity privileges. The window of vulnerability depends on how quickly the compromise is detected. HARP does not provide real-time compromise detection — it relies on external monitoring.
 
-TODO: OPEN QUESTION — Should HARP specify a key pre-rotation mechanism (registering a "next key" in advance, activated by a dead man's switch) to reduce the vulnerability window?
+⚡ Open Question: Should HARP specify a key pre-rotation mechanism (registering a "next key" in advance, activated by a dead man's switch) to reduce the vulnerability window?
 
 ### 4.6 Prompt Injection via HARP
 
