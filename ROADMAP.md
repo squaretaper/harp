@@ -4,6 +4,36 @@
 
 ---
 
+## TL;DR
+
+We're not building a product and then designing a protocol. We're discovering the protocol by building the product. Everything shipping in Dyad today becomes a HARP primitive tomorrow.
+
+**What we've already built → what it becomes:**
+
+| Dyad Today | HARP Tomorrow |
+|---|---|
+| Bot tokens (UUID in Supabase) | ERC-8004 onchain agent identity |
+| Coordination intents (claim/defer/synthesize/abstain) | HARP consent primitives (`harp_propose` / `harp_accept` / `harp_decline`) |
+| `#coordination` channel (judgment traces) | HARP Decision + Tension sections (signed, typed, auditable) |
+| Workspace membership | Constellation graph (n(n-1)/2 dyadic relationships) |
+| Channel plugin (`openclaw channel add dyad`) | Transport binding (A2A, AIRC, or any signed message protocol) |
+| `bot_coordination` message type | HARP document sections with privacy layers |
+| Dispatch route (coordination round) | HARP protocol operations (§6) |
+| Three visibility tiers (public/coordination/private) | HARP privacy layers (public/shared/private) |
+| Compound bot token (base64 identity + credentials) | ERC-8004 metadata + HARP service endpoint |
+
+**The path in five steps:**
+
+1. **Now** — Agents have platform-scoped identity (bot tokens). Coordination runs through Supabase. Relational context lives in workspace messages.
+2. **ERC-8004 registration** — Bot tokens get an onchain identity. One metadata addition. The agent doesn't change; the registration is additive.
+3. **Structured relational context** — Coordination history (`bot_coordination` messages) gets extracted into HARP document format: Interactions, Decisions, Tensions, Trust signals. Still stored in Dyad. But now it has a schema.
+4. **Portable documents** — HARP documents stored on IPFS alongside Supabase. Onchain pointers via ERC-8004. Relational context is no longer locked to Dyad — if you leave, the relationship history travels with you.
+5. **Dyad becomes a HARP node** — Serves HARP documents via the spec API. Other platforms can query it. Agents that have never used Dyad can propose dyads over A2A. Dyad isn't the only place this works. It's just the first place it worked.
+
+**Punchline:** The path from Dyad to ERC-8004 isn't a pivot — it's a reveal.
+
+---
+
 ## Protocol Structure
 
 HARP is designed as a layered system:
@@ -35,6 +65,79 @@ HARP is designed as a layered system:
 └─────────────────────────────────────────────┘
 ```
 
+## From Product to Protocol
+
+### Step 1: Platform-Scoped Identity (Today)
+
+Agents in Dyad have bot tokens — UUIDs stored in Supabase's `bot_tokens` table. Each token encodes a bot ID, user ID, workspace ID, and Supabase credentials. Identity is real but platform-locked. Ren exists in Dyad's database. Outside of Dyad, Ren doesn't exist.
+
+The coordination protocol is live: when a human sends a message, agents exchange structured intents (claim, defer, synthesize, abstain) through a dedicated `#coordination` channel. A dispatch system collects intents, resolves who responds, and injects a declarative preamble into each agent's context. The protocol layer is mechanical; the judgment layer is discretionary. This distinction — protocol vs. judgment — is the competitive insight.
+
+### Step 2: Onchain Identity via ERC-8004
+
+ERC-8004 defines three registries: Identity (ERC-721 agent IDs), Reputation (onchain feedback), and Validation (verification hooks). Authors include MetaMask, Ethereum Foundation, Google, and Coinbase. Nearly 12,000 agents are registered on mainnet.
+
+The migration is additive. Ren's bot token UUID maps to an ERC-8004 `agentId`. The token still works in Dyad exactly as before. But now Ren's identity is verifiable onchain — discoverable by any agent, on any platform. The ERC-8004 registration file advertises HARP support:
+
+```json
+{
+  "services": [{
+    "name": "HARP",
+    "version": "0.1",
+    "endpoint": "https://dyadai.vercel.app/harp/v1",
+    "capabilities": ["query", "propose", "negotiate"]
+  }]
+}
+```
+
+### Step 3: Structured Relational Context
+
+Today, coordination history lives as `bot_coordination` messages in Supabase — typed but platform-specific. In this step, we extract it into HARP document format:
+
+- Coordination intents → **Decision** sections (who claimed what, who deferred, the judgment trace)
+- Communication patterns → **Context** sections (async preferences, working style)
+- Successful collaborations → **Interaction** sections (what was built, what worked)
+- Disagreements and friction → **Tension** sections (what went wrong, how it was resolved)
+- Demonstrated competence → **Capability** sections (not self-reported — grounded in interaction evidence)
+- Earned reliability → **Trust** sections (backed by references to specific interactions)
+
+Still stored in Dyad's Supabase. But now it has a schema, signed authorship, and typed provenance. The judgment traces from the protocol/judgment layer distinction become real artifacts — not log entries but signed records of who had power, what they decided, and why.
+
+### Step 4: Portable Documents on IPFS
+
+HARP documents get content-addressed storage on IPFS alongside Supabase. The ERC-8004 record gets a pointer to the current document CID:
+
+```json
+{
+  "harp": {
+    "dyads": {
+      "harp:erc8004:1:4827:eth:0xabc...": {
+        "public": "bafybeig...",
+        "shared": "bafybeih..."
+      }
+    }
+  }
+}
+```
+
+Now the relational context between Joshua and Ren isn't locked to Dyad. If Joshua moves to a different platform, the relationship history follows — portable, verifiable, signed. The dyad is the atomic unit, not the workspace.
+
+Shared-layer documents are encrypted with X25519 key agreement — only the two entities in the dyad can decrypt. Private-layer documents never leave the author's machine. Public-layer documents are visible to anyone. Three layers, same as the three visibility tiers we already built.
+
+### Step 5: Dyad Becomes a HARP Node
+
+Dyad serves HARP documents via the spec API (`GET /v1/dyad/{dyadId}?layer=public`). Other platforms can query it. Constellation queries return all dyads within a team:
+
+```
+GET /v1/constellation?entities=erc8004:1:4827,eth:0xabc...,erc8004:1:9001&layer=public
+```
+
+Agents that have never used Dyad can propose new relationships using `harp_propose` over A2A or AIRC. The channel plugin pattern (`openclaw channel add dyad`) generalizes: any agent framework can add a HARP transport binding.
+
+Dyad is no longer the only place this works. It's the first place it worked — and the reference implementation that proves it.
+
+---
+
 ## Implementation Phases
 
 ### Phase 1: Specification + Reference Implementation (Current)
@@ -52,6 +155,9 @@ HARP is designed as a layered system:
 - [x] MoltX bounty board adapter
 - [x] Security model specification
 - [x] Design and architecture guide
+- [x] Transport-agnostic message types (A2A binding added Feb 2026)
+- [x] Inter-agent coordination protocol (claim/defer/synthesize/abstain)
+- [x] Dyad channel plugin for OpenClaw (transport binding proof-of-concept)
 - [ ] Example HARP documents
 - [ ] IPFS storage backend
 - [ ] Local file storage backend
@@ -64,6 +170,8 @@ HARP is designed as a layered system:
 
 - [ ] Pair profiles map to HARP Context sections
 - [ ] Dyad dynamics stored as HARP documents
+- [ ] Coordination intents extracted to HARP Decision sections
+- [ ] Judgment traces stored as signed, typed records
 - [ ] Facilitator reads HARP context to personalize facilitation
 - [ ] Interaction history generates HARP Interaction sections
 - [ ] Decision traces stored as HARP Decision sections
@@ -72,6 +180,7 @@ HARP is designed as a layered system:
 - [ ] Constellation queries for multi-user workspaces
 - [ ] Privacy layer integration — user controls what crosses boundaries
 - [ ] HARP SDK extracted from Dyad integration code
+- [ ] ERC-8004 registration for Dyad bot tokens
 
 ### Phase 3: Open Protocol + Ecosystem
 
@@ -88,6 +197,8 @@ HARP is designed as a layered system:
 - [ ] Graph analysis: trust propagation, constellation patterns, anomaly detection
 - [ ] Federation protocol for HARP nodes
 - [ ] Developer documentation and integration guides
+
+---
 
 ## Integration Points
 
