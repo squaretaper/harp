@@ -77,7 +77,11 @@ export function normalizeEntityId(id: EntityId): EntityId {
     return `airc:${id.slice(5).toLowerCase().trim()}`;
   }
 
-  throw new Error(`Unknown entity ID format: ${id}`);
+  throw new Error(
+    `Unknown entity ID format: ${id}. ` +
+    `Entity IDs must use one of the supported prefixes: ` +
+    `"airc:<handle>", "eth:<address>", or "erc8004:<chainId>:<agentId>"`
+  );
 }
 
 /**
@@ -112,17 +116,37 @@ function parseFrontmatterYaml(yaml: string): Record<string, unknown> {
   const lines = yaml.split("\n");
   let currentKey = "";
   let currentArray: unknown[] | null = null;
-  let indent = 0;
+  let currentObject: Record<string, unknown> | null = null;
+  let arrayIndent = 0;
 
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith("#")) continue;
 
-    // Array item
+    const lineIndent = line.length - line.trimStart().length;
+
+    // Array item (starts with "- ")
     if (trimmed.startsWith("- ")) {
       if (currentArray) {
-        const value = trimmed.slice(2).trim();
-        currentArray.push(parseYamlValue(value));
+        const afterDash = trimmed.slice(2).trim();
+        const colonIdx = afterDash.indexOf(":");
+        if (colonIdx > 0) {
+          // This is "- key: value" — start of an object in the array
+          const key = afterDash.slice(0, colonIdx).trim();
+          const value = afterDash.slice(colonIdx + 1).trim();
+          currentObject = {};
+          if (value === "" || value === "|") {
+            // Nested structure under this key — will be collected
+            currentObject[key] = {};
+          } else {
+            currentObject[key] = parseYamlValue(value);
+          }
+          currentArray.push(currentObject);
+        } else {
+          // Simple array item: "- value"
+          currentObject = null;
+          currentArray.push(parseYamlValue(afterDash));
+        }
       }
       continue;
     }
@@ -133,24 +157,65 @@ function parseFrontmatterYaml(yaml: string): Record<string, unknown> {
       const key = trimmed.slice(0, colonIdx).trim();
       const value = trimmed.slice(colonIdx + 1).trim();
 
-      const lineIndent = line.length - line.trimStart().length;
+      // Check if this is a nested property of the current array object
+      if (currentArray && currentObject && lineIndent > arrayIndent) {
+        // Check for nested object (e.g., erc8004.chainId)
+        if (value === "" || value === "|") {
+          // Start of a nested object within the current array object
+          const nestedObj: Record<string, unknown> = {};
+          currentObject[key] = nestedObj;
+          // We'll collect nested keys into this object via a simple approach:
+          // store a reference to the current nesting target
+          (currentObject as any).__nested_target__ = nestedObj;
+        } else if ((currentObject as any).__nested_target__ && lineIndent > arrayIndent + 4) {
+          // Deep nested key (e.g., chainId under erc8004)
+          const nestedObj = (currentObject as any).__nested_target__ as Record<string, unknown>;
+          nestedObj[key] = parseYamlValue(value);
+        } else {
+          // Regular property of the current array object
+          delete (currentObject as any).__nested_target__;
+          currentObject[key] = parseYamlValue(value);
+        }
+        continue;
+      }
 
       if (value === "" || value === "|") {
         // Start of array or nested object
         currentKey = key;
         currentArray = [];
+        currentObject = null;
         result[key] = currentArray;
-        indent = lineIndent;
-      } else {
-        if (currentArray && lineIndent > indent) {
-          // Nested key in array item — skip for simplified parser
-          continue;
-        }
+        arrayIndent = lineIndent;
+      } else if (value.startsWith("[") && value.endsWith("]")) {
+        // Inline array: tags: ["foo", "bar"]
         currentArray = null;
+        currentObject = null;
+        const inner = value.slice(1, -1).trim();
+        if (inner === "") {
+          result[key] = [];
+        } else {
+          result[key] = inner.split(",").map((item) => parseYamlValue(item.trim()));
+        }
+      } else {
+        currentArray = null;
+        currentObject = null;
         result[key] = parseYamlValue(value);
       }
     }
   }
+
+  // Clean up any lingering __nested_target__ markers
+  function cleanNested(obj: unknown): void {
+    if (Array.isArray(obj)) {
+      for (const item of obj) cleanNested(item);
+    } else if (obj && typeof obj === "object") {
+      delete (obj as any).__nested_target__;
+      for (const val of Object.values(obj as Record<string, unknown>)) {
+        cleanNested(val);
+      }
+    }
+  }
+  cleanNested(result);
 
   return result;
 }
@@ -342,10 +407,13 @@ export function serializeDocument(doc: HarpDocument): string {
   const bodyParts: string[] = [];
 
   if (doc.preamble) {
-    bodyParts.push(doc.preamble);
-    bodyParts.push("");
-    bodyParts.push("---");
-    bodyParts.push("");
+    // Strip any trailing --- separators that may have been
+    // picked up during parsing to avoid accumulation on round-trips
+    const cleanPreamble = doc.preamble.replace(/(\n---)+\s*$/, "").trim();
+    if (cleanPreamble) {
+      bodyParts.push(cleanPreamble);
+      bodyParts.push("");
+    }
   }
 
   for (const section of doc.sections) {

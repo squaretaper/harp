@@ -6,3 +6,5 @@ dist/
 coverage/
 .env
 .env.local
+dyad-harp-*.tgz
+COMMS.md
