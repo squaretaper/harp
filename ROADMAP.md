@@ -159,8 +159,9 @@ Dyad is no longer the only place this works. It's the first place it worked — 
 - [x] Inter-agent coordination protocol (claim/defer/synthesize/abstain)
 - [x] Dyad channel plugin for OpenClaw (transport binding proof-of-concept)
 - [ ] Example HARP documents
-- [ ] IPFS storage backend
-- [ ] Local file storage backend
+- [ ] Adapter test suites (AIRC + MoltX + AdapterRegistry)
+- [ ] Local file storage backend (see Storage Implementation Plan below)
+- [ ] IPFS storage backend (see Storage Implementation Plan below)
 - [ ] Ed25519 signature implementation
 - [ ] X25519 shared-layer encryption
 
@@ -224,6 +225,62 @@ Dyad is the product that proves HARP works. The integration path:
 | **MCP** | Tool layer (below HARP). HARP documents could be served as MCP resources, making relational context available to any MCP-compatible model. |
 | **x402** | Payment layer. HARP node queries can be gated via x402 micropayments. Agent-to-agent relational queries at scale become a revenue model. |
 | **W3C DIDs** | Future identity type. Adding `did:<method>:<id>` as an entity identifier format would extend HARP beyond Ethereum-native identity. |
+
+## Storage Implementation Plan
+
+The `HarpStorage` interface (defined in `types.ts`) requires five operations: `store`, `retrieve`, `exists`, `pin`, `unpin`. All storage backends implement the same interface — consumers don't know or care where documents live.
+
+### Progression
+
+| Version | Backend | Description | Dependencies |
+|---------|---------|-------------|--------------|
+| **v0.1** | `MemoryStorage` | In-memory Map. For tests, examples, development. No persistence. | None |
+| **v0.2** | `FileStorage` | Local filesystem. Documents stored as `<cid>.harp.md` in a configurable directory. CIDs computed via SHA-256 (same as MemoryStorage). Pin/unpin tracked via a `.pins.json` manifest. | `node:fs`, `node:crypto` |
+| **v0.3** | `IPFSStorage` | Content-addressed network storage via Helia (JS IPFS implementation) or HTTP gateway API (Pinata, web3.storage, Filebase). Pin/unpin map directly to IPFS pinning. | `helia` or HTTP client |
+
+### FileStorage Design Notes
+
+```typescript
+class FileStorage implements HarpStorage {
+  constructor(private dir: string) {} // e.g., ~/.harp/documents/
+
+  async store(content: string): Promise<CID> {
+    const cid = computeChecksum(content); // SHA-256, already in harp.ts
+    await fs.writeFile(path.join(this.dir, `${cid}.harp.md`), content);
+    return cid;
+  }
+
+  async retrieve(cid: CID): Promise<string> {
+    return fs.readFile(path.join(this.dir, `${cid}.harp.md`), 'utf-8');
+  }
+  // exists, pin, unpin follow naturally
+}
+```
+
+### IPFSStorage Design Notes
+
+Two approaches, both valid:
+
+**Option A: Helia (embedded JS IPFS node)**
+- Full p2p. No third-party dependency for storage.
+- Heavier startup. Better for always-on HARP nodes.
+- `npm install helia @helia/unixfs`
+
+**Option B: HTTP pinning API (Pinata / web3.storage / Filebase)**
+- Lightweight. REST calls to pin/unpin/retrieve.
+- Depends on a third-party service for persistence and availability.
+- Better for client-side or serverless deployments.
+
+**Recommendation:** Support both via a config flag. Default to HTTP pinning (lower friction for onboarding), with Helia as an opt-in for self-hosted nodes.
+
+### CID Compatibility
+
+Current `computeChecksum` uses SHA-256 hex. IPFS uses CIDv1 (multihash + multicodec). At the IPFSStorage transition:
+- `MemoryStorage` and `FileStorage` continue using SHA-256 hex (simple, deterministic)
+- `IPFSStorage` uses native IPFS CIDs
+- The `HarpStorage` interface treats CIDs as opaque strings — no breaking change
+
+---
 
 ## Open Questions
 
