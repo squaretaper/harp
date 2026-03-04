@@ -43,7 +43,7 @@ import type {
 
 const HARP_VERSION = "0.1.0";
 const FRONTMATTER_DELIMITER = "---";
-const SECTION_HEADING_REGEX = /^## (\S+?):\s*(.+)$/;
+const SECTION_HEADING_REGEX = /^## (\S+?):\s*(.+)$/m;
 const META_BLOCK_REGEX = /<!-- harp:meta\n([\s\S]*?)-->/;
 
 // =============================================================================
@@ -762,25 +762,25 @@ export function assessCollaborationReadiness(
  * Useful for testing and local development. Not for production.
  */
 export class MemoryStorage implements HarpStorage {
-  private store = new Map<CID, string>();
+  private _store = new Map<CID, string>();
   private pinned = new Set<CID>();
 
   async store(content: string): Promise<CID> {
     // Simulate a CID by hashing the content
     const hash = createHash("sha256").update(content, "utf8").digest("hex");
     const cid = `bafymem${hash.slice(0, 40)}`;
-    this.store.set(cid, content);
+    this._store.set(cid, content);
     return cid;
   }
 
   async retrieve(cid: CID): Promise<string> {
-    const content = this.store.get(cid);
+    const content = this._store.get(cid);
     if (!content) throw new Error(`CID not found: ${cid}`);
     return content;
   }
 
   async exists(cid: CID): Promise<boolean> {
-    return this.store.has(cid);
+    return this._store.has(cid);
   }
 
   async pin(cid: CID): Promise<void> {

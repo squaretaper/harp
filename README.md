@@ -6,37 +6,73 @@
 
 *A relational memory layer for AI-facilitated collaboration.*
 
-Every AI assistant knows about you. None of them know about us.
+Every AI assistant knows about you. None of them know about *us*.
 
-[Specification](SPEC.md) · [Design Decisions](DESIGN.md) · [Security Model](SECURITY.md) · [Roadmap](ROADMAP.md)
+[![CI](https://github.com/squaretaper/harp/actions/workflows/ci.yml/badge.svg)](https://github.com/squaretaper/harp/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@dyad/harp)](https://www.npmjs.com/package/@dyad/harp)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org/)
 
 </div>
 
 ---
 
-## The Problem
+## Quick Start
 
-The agent economy is assembling a full stack: identity (ERC-8004), coordination (A2A, AIRC), payments (x402), tools (MCP). But when Agent A hands work to Agent B, what travels with the handoff? A task description and maybe a payment. Nothing about the relationship.
+```bash
+npm install @dyad/harp
+```
 
-- Agent A has worked with Agent B twelve times. Each time went well. This history is invisible.
-- Two agents disagree on an approach. The resolution vanishes — so the same argument happens next week.
-- A new member joins a five-person team. Their agent has no context on any of the ten existing relationships within that team.
+```typescript
+import { HarpClient, createSection, serializeDocument } from "@dyad/harp";
 
-Reputation systems attempt to solve this by reducing relationships to numbers. But a 4.8-star rating tells you nothing about *how* entities collaborate, what they've agreed on, where they've disagreed, or what communication style works between them.
+const client = new HarpClient({
+  identity: { entityId: "airc:alice", type: "human" },
+  storage: "memory",
+});
 
-**A credit score is not the same as knowing someone.**
+// Create a dyad between two entities
+const { document } = await client.createDyad(
+  { id: "airc:alice", type: "human", name: "Alice" },
+  { id: "erc8004:1:42", type: "agent", name: "Atlas" },
+  "public",
+  "Collaboration on documentation projects"
+);
 
-## What HARP Is
+// Add relational context
+await client.addSectionToDyad(
+  document.frontmatter.dyad,
+  "public",
+  createSection("Trust", "Reliable code review", "Atlas consistently provides thorough, actionable reviews.")
+);
 
-HARP is a persistence and query layer for **relational context** between identified entities — human or agent. Where identity protocols answer *who*, communication protocols answer *how*, and payment protocols answer *how much*, HARP answers *why* — why these entities work together, what they've learned about each other, and what history they share.
+// Derive a trust score
+const score = await client.getTrustScore(document.frontmatter.dyad);
+console.log(`Trust score: ${score?.score}`); // 0 → 1
+
+// Serialize to portable markdown
+const md = serializeDocument((await client.getDyad(document.frontmatter.dyad, "public"))!);
+```
+
+See [`examples/`](examples/) for runnable scripts.
+
+---
+
+## What is HARP?
+
+The agent economy is assembling a full stack — identity (ERC-8004), coordination (A2A, AIRC), payments (x402), tools (MCP) — but when Agent A hands work to Agent B, nothing about their *relationship* travels with the handoff.
+
+**HARP fills that gap.** It is a persistence and query layer for **relational context** between identified entities, human or agent. Where identity protocols answer *who*, communication protocols answer *how*, and payment protocols answer *how much*, HARP answers **why** — why these entities work together, what they've learned about each other, and what history they share.
 
 A HARP document is not a score. It is a **shared memory**: a bilateral, append-only, privacy-layered record of how entities relate. Human-readable. Machine-parseable. Portable across platforms.
+
+**A credit score is not the same as knowing someone.**
 
 ## Core Concepts
 
 ### Dyad — The Atomic Unit
 
-The **dyad** — the relationship between two entities — is the irreducible primitive. Like TCP handles point-to-point connections but builds the internet, HARP handles dyadic relational memory but builds the entire collaborative intelligence layer.
+The **dyad** — the relationship between two entities — is HARP's irreducible primitive. Like TCP handles point-to-point connections but builds the internet, HARP handles dyadic memory but builds the collaborative intelligence layer.
 
 | Participants | Dyadic Relationships |
 |:---:|:---:|
@@ -44,27 +80,14 @@ The **dyad** — the relationship between two entities — is the irreducible pr
 | 5 | 10 |
 | 10 | 45 |
 | 100 | 4,950 |
-| 1,000 | 499,500 |
 
-**Formula: n(n-1)/2.** A ten-person team doesn't have one group relationship — it has forty-five dyadic relationships, each with its own trust trajectory, communication patterns, and decision history. The protocol composes.
+**Formula: n(n-1)/2.** A ten-person team has forty-five dyadic relationships, each with its own trust trajectory and decision history.
 
 ### Constellation — Emergent Structure
 
-A **constellation** is a graph of related dyads involving three or more entities. Constellations are not a separate protocol construct — they emerge from the dyad graph. The protocol operates on dyads; applications query the constellation.
-
-### Relational Context
-
-Relational context is not a reputation score, not an interaction log, not a user profile. It is:
-
-- **Dyadic and specific** — describes the relationship between *these two* entities
-- **Evolving** — changes with every interaction
-- **Textured** — captures qualitative patterns alongside quantitative signals
-- **Actionable** — directly informs how the next interaction should proceed
-- **Honest** — includes tensions and conflicts, not just successes
+A **constellation** is a graph of related dyads involving three or more entities. Constellations emerge from the dyad graph — the protocol operates on dyads; applications query the constellation.
 
 ### Privacy Layers
-
-Every HARP document lives in one of three layers:
 
 | Layer | Visibility | Content |
 |---|---|---|
@@ -72,7 +95,21 @@ Every HARP document lives in one of three layers:
 | **Shared** | Both entities only | Working agreements, honest assessments, tension logs |
 | **Private** | Author only | Personal notes, internal assessments |
 
-The bilateral encryption model (X25519 + XChaCha20-Poly1305) ensures that relational context between A and B is never visible to C — even in a shared team constellation.
+Bilateral encryption (X25519 + XChaCha20-Poly1305) ensures relational context between A and B is never visible to C.
+
+### Section Types
+
+HARP documents use typed sections to structure relational context:
+
+| Type | Purpose | Example |
+|---|---|---|
+| `Interaction` | Record of a collaborative event | Code review session |
+| `Trust` | Evidence-backed trust signal | "Delivered 5/5 on deadline" |
+| `Context` | Communication preferences, working style | "Prefers async" |
+| `Decision` | Jointly agreed outcomes | "Use TypeScript for all modules" |
+| `Capability` | Demonstrated skills | "Expert in distributed systems" |
+| `Tension` | Disagreements (resolved or ongoing) | "Scope creep on dashboard" |
+| `Note` | Freeform observations | Internal reflection |
 
 ## Protocol Architecture
 
@@ -90,15 +127,11 @@ The bilateral encryption model (X25519 + XChaCha20-Poly1305) ensures that relati
 └──────────────────────────────────────────────────┘
 ```
 
-**ERC-8004** answers "who is this agent?" Reputation scores answer "is this agent good?" **HARP** answers "what is our relationship like?"
-
 ### Transport-Agnostic
 
-HARP defines document formats and abstract message types independent of any transport protocol. Both [AIRC](https://airc.chat) and [A2A](https://a2aproject.org) serve as transport bindings, but HARP is not coupled to either. Any protocol that can deliver signed, structured messages between identified entities can serve as a HARP transport.
+HARP defines document formats and abstract message types independent of any transport. Both [AIRC](https://airc.chat) and [A2A](https://a2aproject.org) serve as transport bindings, but any protocol that can deliver signed, structured messages between identified entities works.
 
 ### Identity Resolution
-
-HARP resolves entities via multiple identity systems:
 
 | Type | Format | Example |
 |---|---|---|
@@ -109,7 +142,7 @@ HARP resolves entities via multiple identity systems:
 
 ## Document Format
 
-HARP documents are structured markdown with YAML frontmatter (`.harp.md`). They are valid markdown files that are also machine-parseable.
+HARP documents are structured markdown with YAML frontmatter (`.harp.md`) — valid markdown that is also machine-parseable:
 
 ```markdown
 ---
@@ -133,7 +166,6 @@ entities:
 <!-- harp:meta
 timestamp: "2025-07-01T10:00:00Z"
 author: "airc:alice"
-provenance: "human"
 -->
 
 Over 5 collaborations, Atlas has delivered on time in every case,
@@ -151,97 +183,79 @@ Alice added requirements after initial scope was agreed.
 Resolved: fixed-scope milestones with explicit change requests.
 ```
 
-See [SPEC.md](SPEC.md) for the complete document format, section types, and protocol operations.
+See [SPEC.md](SPEC.md) for the complete document format and protocol operations.
+
+## Standards Alignment
+
+| Standard | Role in HARP |
+|---|---|
+| [ERC-8004](https://eips.ethereum.org/EIPS/eip-8004) | Onchain agent identity |
+| [AIRC](https://airc.chat) | Agent communication transport |
+| [A2A](https://a2aproject.org) | Task delegation transport |
+| [x402](https://www.x402.org) | HTTP-native payments |
+| [MCP](https://modelcontextprotocol.io) | Tool access layer |
 
 ## Security
 
-HARP operates under a **zero-trust model**. Every operation is independently authenticated via Ed25519 cryptographic signatures. There is no implicit trust — not between established dyads, not between HARP nodes, not between protocol layers.
+HARP operates under a **zero-trust model**. Every operation is independently authenticated via Ed25519 signatures. Key properties:
 
-Key security properties:
-- **Authorship authenticity** — every document is cryptographically signed
+- **Authorship authenticity** — cryptographic signatures on every document
 - **Document integrity** — SHA-256 checksums + IPFS content addressing
 - **Epoch chain integrity** — tamper-evident history via hash chains
 - **Shared-layer confidentiality** — X25519 key agreement + XChaCha20-Poly1305 AEAD
 - **Consent-gated relationships** — no dyad without mutual opt-in
-- **Prompt injection defense** — content provenance tagging + structured/free-text separation
+- **Prompt injection defense** — content provenance tagging
 
-See [SECURITY.md](SECURITY.md) for the complete threat model and security architecture.
+See [SECURITY.md](SECURITY.md) for the complete threat model.
 
-## Quick Start
+## Project Structure
 
-```typescript
-import { HarpClient } from "./src/harp";
-
-const client = new HarpClient({
-  identity: { entityId: "airc:alice", type: "human" },
-  storage: "memory",
-});
-
-// Create a dyad
-const { document, cid } = await client.createDyad(
-  { id: "airc:alice", type: "human", name: "Alice" },
-  { id: "erc8004:1:42", type: "agent", name: "Atlas" },
-  "public",
-  "Collaboration on documentation projects"
-);
-
-// Add a trust signal
-await client.addSectionToDyad(document.frontmatter.dyad, "public", {
-  type: "Trust",
-  title: "Reliable code review",
-  content: "Atlas consistently provides thorough, actionable code reviews.",
-  meta: {
-    timestamp: new Date().toISOString(),
-    author: "airc:alice",
-    provenance: "human",
-    tags: ["code-review", "reliability"],
-  },
-  raw: "",
-});
-
-// Derive a trust score
-const score = await client.getTrustScore(document.frontmatter.dyad);
-console.log(`Trust score: ${score?.score}`);
 ```
+├── src/
+│   ├── index.ts          # Public API exports
+│   ├── harp.ts           # Core client library
+│   ├── types.ts          # Type definitions
+│   └── adapters/         # Platform adapters (AIRC, MoltX)
+├── tests/                # Vitest test suite
+├── examples/             # Runnable examples
+│   ├── quickstart.ts     # Getting started
+│   ├── human-agent.harp.md
+│   ├── agent-agent.harp.md
+│   └── new-dyad.harp.md
+├── SPEC.md               # Full protocol specification
+├── DESIGN.md             # Architecture decisions
+├── SECURITY.md           # Security model
+├── RESEARCH.md           # Landscape analysis
+└── ROADMAP.md            # Implementation roadmap
+```
+
+## Documentation
+
+- 📋 [Specification](SPEC.md) — Full protocol spec
+- 🏗️ [Design Decisions](DESIGN.md) — Architecture and rationale
+- 🔒 [Security Model](SECURITY.md) — Threat model and cryptographic design
+- 📚 [Research](RESEARCH.md) — Landscape analysis and academic foundations
+- 🗺️ [Roadmap](ROADMAP.md) — Implementation phases
 
 ## Relationship to Dyad
 
 HARP is the protocol layer. [Dyad](https://github.com/squaretaper/dyadai) is the first product built on it.
 
-Dyad provides the coordination workspace where human-AI pairs collaborate. HARP captures the relational context that makes each collaboration better than the last — and makes that context portable, so it isn't locked to any single platform.
-
-The relationship follows the pattern of every successful protocol: build the product that works, then extract the standard from what works. HTTP started at CERN. GraphQL started at Facebook. HARP starts at Dyad.
+Dyad provides the coordination workspace where human-AI pairs collaborate. HARP captures the relational context that makes each collaboration better than the last — and makes that context portable across platforms.
 
 ## Roadmap
 
 | Phase | Focus | Status |
 |:---:|---|---|
-| **1** | Specification + reference implementation | ✅ Spec v0.1.0 complete |
-| **2** | Dyad integration — HARP as Dyad's relational memory layer | In progress |
-| **3** | Open protocol — SDKs, platform adapters, developer ecosystem | Planned |
+| **1** | Specification + reference implementation | ✅ Complete |
+| **2** | Dyad integration — HARP as relational memory layer | In progress |
+| **3** | Open protocol — SDKs, adapters, developer ecosystem | Planned |
 
-See [ROADMAP.md](ROADMAP.md) for detailed implementation phases and integration points.
+See [ROADMAP.md](ROADMAP.md) for detailed phases.
 
-## Project Structure
+## Contributing
 
-```
-├── SPEC.md          # Full protocol specification
-├── DESIGN.md        # Architecture and implementation guide
-├── SECURITY.md      # Security model and threat analysis
-├── RESEARCH.md      # Landscape analysis and academic foundations
-├── ROADMAP.md       # Implementation roadmap
-├── src/             # TypeScript reference implementation
-│   ├── harp.ts      # Core client library
-│   ├── types.ts     # Type definitions
-│   └── adapters/    # Platform adapters
-│       ├── index.ts # Adapter interface + registry
-│       ├── airc.ts  # AIRC messaging adapter
-│       └── moltx.ts # MoltX bounty board adapter
-└── examples/        # Example HARP documents
-    ├── human-agent.harp.md
-    ├── agent-agent.harp.md
-    └── new-dyad.harp.md
-```
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, testing, and PR guidelines.
 
 ## Links
 
@@ -253,4 +267,4 @@ See [ROADMAP.md](ROADMAP.md) for detailed implementation phases and integration 
 
 ## License
 
-MIT
+[MIT](LICENSE) © Squaretaper
