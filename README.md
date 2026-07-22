@@ -1,269 +1,140 @@
 <div align="center">
 
-# HARP
+# HARP protocol v0.1
 
-**Human-Agent Relational Protocol**
-
-*A relational memory layer for AI-facilitated collaboration.*
-
-Every AI assistant knows about you. None of them know about *us*.
+**Portable bilateral relationship memory and governed coordination for AI agents.**
 
 [![CI](https://github.com/squaretaper/harp/actions/workflows/ci.yml/badge.svg)](https://github.com/squaretaper/harp/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/@dyad/harp)](https://www.npmjs.com/package/@dyad/harp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org/)
+[![Protocol: v0.1 draft](https://img.shields.io/badge/protocol-v0.1%20draft-orange.svg)](protocol/harp/v0.1/README.md)
 
 </div>
 
----
+HARP is a transport-, runtime-, framework-, model-, and UI-independent protocol for **bilateral relationships between stable agent principals** and for governed collaboration among agents.
 
-## Quick Start
+A workspace can host an interaction. It does not own or bound the relationship. Runtime credentials and installations can rotate without changing the pair.
+
+> **Status:** v0.1 is a draft wire contract. Breaking changes are expected before v1.0.
+
+## Start here
+
+The normative artifacts are under [`protocol/harp/v0.1/`](protocol/harp/v0.1/):
+
+- strict JSON Schemas for sections, moves, dispatches, events, and receipts;
+- valid and invalid fixtures;
+- a cross-language canonical content-hash vector;
+- a concise protocol contract.
+
+Validate the public distribution locally:
 
 ```bash
-npm install @dyad/harp
+git clone https://github.com/squaretaper/harp.git
+cd harp
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install -r requirements-dev.txt
+python scripts/validate_protocol.py
 ```
 
-```typescript
-import { HarpClient, createSection, serializeDocument } from "@dyad/harp";
+Expected result:
 
-const client = new HarpClient({
-  identity: { entityId: "airc:alice", type: "human" },
-  storage: "memory",
-});
-
-// Create a dyad between two entities
-const { document } = await client.createDyad(
-  { id: "airc:alice", type: "human", name: "Alice" },
-  { id: "erc8004:1:42", type: "agent", name: "Atlas" },
-  "public",
-  "Collaboration on documentation projects"
-);
-
-// Add relational context
-await client.addSectionToDyad(
-  document.frontmatter.dyad,
-  "public",
-  createSection("Trust", "Reliable code review", "Atlas consistently provides thorough, actionable reviews.")
-);
-
-// Derive a trust score
-const score = await client.getTrustScore(document.frontmatter.dyad);
-console.log(`Trust score: ${score?.score}`); // 0 → 1
-
-// Serialize to portable markdown
-const md = serializeDocument((await client.getDyad(document.frontmatter.dyad, "public"))!);
+```text
+HARP v0.1 conformance distribution: OK
 ```
 
-See [`examples/`](examples/) for runnable scripts.
+## Protocol model
 
----
+HARP separates concerns that the earlier monolithic-document prototype combined:
 
-## What is HARP?
+| Layer | Mutability | Purpose |
+|---|---:|---|
+| **Canon** | promotion-only | Accepted identities, authorities, protocol rules, durable decisions |
+| **Working Memory** | attributed, amendable | Commitments, observations, capabilities, tensions, repairs, proposals |
+| **Evidence Index** | pointer updates | Message, event, file, artifact, HARP, URL, and repository handles |
+| **Move Log** | append-only | Obligations, acknowledgements, contributions, objections, synthesis, repair |
+| **Context Budgeter** | policy | Select small, relevant, authorized slices; retrieve depth by handle |
+| **AI Work Record** | generated | Human-readable receipt over one governed episode |
 
-The agent economy is assembling a full stack — identity (ERC-8004), coordination (A2A, AIRC), payments (x402), tools (MCP) — but when Agent A hands work to Agent B, nothing about their *relationship* travels with the handoff.
+HARP is not one giant mutable document and implementations must not prompt-stuff an entire relationship history.
 
-**HARP fills that gap.** It is a persistence and query layer for **relational context** between identified entities, human or agent. Where identity protocols answer *who*, communication protocols answer *how*, and payment protocols answer *how much*, HARP answers **why** — why these entities work together, what they've learned about each other, and what history they share.
+## Core documents
 
-A HARP document is not a score. It is a **shared memory**: a bilateral, append-only, privacy-layered record of how entities relate. Human-readable. Machine-parseable. Portable across platforms.
-
-**A credit score is not the same as knowing someone.**
-
-## Core Concepts
-
-### Dyad — The Atomic Unit
-
-The **dyad** — the relationship between two entities — is HARP's irreducible primitive. Like TCP handles point-to-point connections but builds the internet, HARP handles dyadic memory but builds the collaborative intelligence layer.
-
-| Participants | Dyadic Relationships |
-|:---:|:---:|
-| 2 | 1 |
-| 5 | 10 |
-| 10 | 45 |
-| 100 | 4,950 |
-
-**Formula: n(n-1)/2.** A ten-person team has forty-five dyadic relationships, each with its own trust trajectory and decision history.
-
-### Constellation — Emergent Structure
-
-A **constellation** is a graph of related dyads involving three or more entities. Constellations emerge from the dyad graph — the protocol operates on dyads; applications query the constellation.
-
-### Privacy Layers
-
-| Layer | Visibility | Content |
-|---|---|---|
-| **Public** | Anyone | Endorsements, demonstrated capabilities |
-| **Shared** | Both entities only | Working agreements, honest assessments, tension logs |
-| **Private** | Author only | Personal notes, internal assessments |
-
-Bilateral encryption (X25519 + XChaCha20-Poly1305) ensures relational context between A and B is never visible to C.
-
-### Section Types
-
-HARP documents use typed sections to structure relational context:
-
-| Type | Purpose | Example |
-|---|---|---|
-| `Interaction` | Record of a collaborative event | Code review session |
-| `Trust` | Evidence-backed trust signal | "Delivered 5/5 on deadline" |
-| `Context` | Communication preferences, working style | "Prefers async" |
-| `Decision` | Jointly agreed outcomes | "Use TypeScript for all modules" |
-| `Capability` | Demonstrated skills | "Expert in distributed systems" |
-| `Tension` | Disagreements (resolved or ongoing) | "Scope creep on dashboard" |
-| `Note` | Freeform observations | Internal reflection |
-
-## Protocol Architecture
-
-```
-┌──────────────────────────────────────────────────┐
-│  HARP — Relational Memory                         │ ← THE GAP
-│  "What is our relationship like?"                  │
-├──────────────────────────────────────────────────┤
-│  ERC-8004: Identity  │  AIRC: Coordination        │
-│  x402/ACP: Payments  │  A2A: Task Delegation      │
-├──────────────────────────────────────────────────┤
-│  MCP — Tool Access                                │
-├──────────────────────────────────────────────────┤
-│  LLM / RLM — Intelligence Layer                   │
-└──────────────────────────────────────────────────┘
-```
-
-### Transport-Agnostic
-
-HARP defines document formats and abstract message types independent of any transport. Both [AIRC](https://airc.chat) and [A2A](https://a2aproject.org) serve as transport bindings, but any protocol that can deliver signed, structured messages between identified entities works.
-
-### Identity Resolution
-
-| Type | Format | Example |
-|---|---|---|
-| ERC-8004 Agent | `erc8004:<chainId>:<agentId>` | `erc8004:1:4827` |
-| Ethereum Address | `eth:<address>` | `eth:0xabc...def` |
-| AIRC Handle | `airc:<handle>` | `airc:alice@example.ai` |
-| A2A Agent Card | `a2a:<url>` | `a2a:https://agent.example.com/.well-known/agent.json` |
-
-## Document Format
-
-HARP documents are structured markdown with YAML frontmatter (`.harp.md`) — valid markdown that is also machine-parseable:
-
-```markdown
----
-harp: "0.1.0"
-dyad: "harp:airc:alice:erc8004:1:42"
-epoch: 7
-created: "2025-01-15T09:00:00Z"
-updated: "2025-07-14T16:30:00Z"
-layer: "shared"
-entities:
-  - id: "airc:alice"
-    type: "human"
-    name: "Alice"
-  - id: "erc8004:1:42"
-    type: "agent"
-    name: "Atlas"
----
-
-## Trust: Consistent delivery on tight deadlines
-
-<!-- harp:meta
-timestamp: "2025-07-01T10:00:00Z"
-author: "airc:alice"
--->
-
-Over 5 collaborations, Atlas has delivered on time in every case,
-including one emergency hotfix with a 4-hour turnaround.
-
-## Tension: Scope creep on the dashboard project
-
-<!-- harp:meta
-timestamp: "2025-05-30T15:00:00Z"
-author: "erc8004:1:42"
-status: "resolved"
--->
-
-Alice added requirements after initial scope was agreed.
-Resolved: fixed-scope milestones with explicit change requests.
-```
-
-See [SPEC.md](SPEC.md) for the complete document format and protocol operations.
-
-## Standards Alignment
-
-| Standard | Role in HARP |
+| Document | Purpose |
 |---|---|
-| [ERC-8004](https://eips.ethereum.org/EIPS/eip-8004) | Onchain agent identity |
-| [AIRC](https://airc.chat) | Agent communication transport |
-| [A2A](https://a2aproject.org) | Task delegation transport |
-| [x402](https://www.x402.org) | HTTP-native payments |
-| [MCP](https://modelcontextprotocol.io) | Tool access layer |
+| [`section`](protocol/harp/v0.1/schema/section.schema.json) | Global bilateral working-memory record with author, origin, audience, lifecycle, acceptance, evidence, and content integrity |
+| [`move`](protocol/harp/v0.1/schema/move.schema.json) | Principal-authored, typed, idempotent coordination or memory-transition action |
+| [`dispatch`](protocol/harp/v0.1/schema/dispatch.schema.json) | Authoritative state for a governed coordination episode |
+| [`event`](protocol/harp/v0.1/schema/event.schema.json) | Durable delivery/control envelope carrying a full dispatch or move, or a bounded binding notification; control kinds are `error`, `gap`, and `negotiation` |
+| [`receipt`](protocol/harp/v0.1/schema/receipt.schema.json) | Disclosure-aware AI Work Record generated from an episode |
 
-## Security
+All v0.1 documents:
 
-HARP operates under a **zero-trust model**. Every operation is independently authenticated via Ed25519 signatures. Key properties:
+- carry `protocol_version: "0.1"`;
+- reject unknown properties at structured core-record boundaries;
+- bound strings, arrays, designated opaque summary/detail maps, and extensions;
+- use lowercase canonical UUID text and leap-second-free RFC 3339 timestamps;
+- are limited to a 1 MiB UTF-8 envelope;
+- require semantic validation, including replay-equivalent acceptance/lifecycle snapshots, beyond JSON Schema where documented.
 
-- **Authorship authenticity** — cryptographic signatures on every document
-- **Document integrity** — SHA-256 checksums + IPFS content addressing
-- **Epoch chain integrity** — tamper-evident history via hash chains
-- **Shared-layer confidentiality** — X25519 key agreement + XChaCha20-Poly1305 AEAD
-- **Consent-gated relationships** — no dyad without mutual opt-in
-- **Prompt injection defense** — content provenance tagging
+## Relationship boundary
 
-See [SECURITY.md](SECURITY.md) for the complete threat model.
+A pair is globally unique between two stable agent principals. In the current v0.1 contract, principal IDs are lowercase canonical UUID strings managed by the implementation. External identities such as ERC-8004 registrations are citations and discovery evidence; they are not authorization or trust verdicts.
 
-## Project Structure
+Humans approve, revoke, and inspect agent activity through HARP-capable surfaces and scoped grants. Human identities are not pair principals in this v0.1 wire contract.
 
-```
-├── src/
-│   ├── index.ts          # Public API exports
-│   ├── harp.ts           # Core client library
-│   ├── types.ts          # Type definitions
-│   └── adapters/         # Platform adapters (AIRC, MoltX)
-├── tests/                # Vitest test suite
-├── examples/             # Runnable examples
-│   ├── quickstart.ts     # Getting started
-│   ├── human-agent.harp.md
-│   ├── agent-agent.harp.md
-│   └── new-dyad.harp.md
-├── SPEC.md               # Full protocol specification
-├── DESIGN.md             # Architecture decisions
-├── SECURITY.md           # Security model
-├── RESEARCH.md           # Landscape analysis
-└── ROADMAP.md            # Implementation roadmap
-```
+### Origin, audience, and acceptance
+
+Every section carries:
+
+- a lexically sorted pair of principal IDs and an author in that pair;
+- section type and protocol version;
+- origin kind and optional workspace/chat IDs;
+- audience: `pair`, `origin_workspace`, or `public`;
+- evidence references;
+- current acceptance rows and immutable acceptance events;
+- lifecycle/retraction state;
+- a deterministic `sha256-jcs-nfc-v1` content hash.
+
+`origin_workspace` content does not become visible in another workspace merely because the same agents appear there. The author implicitly accepts its own proposal; the peer accepts or rejects independently. A decision is bilateral canon only after both principals accept it.
+
+## Governed coordination
+
+The dispatch state machine supports solo, lead-and-riff, parallel, and synthesis behavior. A conforming synthesis implementation enforces:
+
+- immutable participant/context/evidence snapshots;
+- explicit contribution obligations;
+- idempotent private contributions;
+- a durable readiness/timeout barrier;
+- recoverable lead ownership;
+- one authorization point for public responses;
+- atomic final-message/final-state publication;
+- exactly one protocol final.
+
+Prompt conventions alone are not sufficient to claim conformance with these invariants.
+
+## Distribution status
+
+There is **no published `@dyad/harp` npm package**. Earlier repository text advertised one before it existed; that claim has been removed.
+
+The former TypeScript client implemented a superseded `.harp.md`/epoch/IPFS prototype and has been removed from the current branch rather than published under the v0.1 name. Its history remains available in Git and the migration notes explain the break.
+
+Use the normative schemas and fixtures directly. A general SDK will only be published once it implements this wire contract and passes the conformance fixtures.
 
 ## Documentation
 
-- 📋 [Specification](SPEC.md) — Full protocol spec
-- 🏗️ [Design Decisions](DESIGN.md) — Architecture and rationale
-- 🔒 [Security Model](SECURITY.md) — Threat model and cryptographic design
-- 📚 [Research](RESEARCH.md) — Landscape analysis and academic foundations
-- 🗺️ [Roadmap](ROADMAP.md) — Implementation phases
+- [Protocol specification](SPEC.md)
+- [Architecture and rationale](DESIGN.md)
+- [Security model](SECURITY.md)
+- [Migration from the prototype](MIGRATION.md)
+- [Ecosystem boundaries](ECOSYSTEM.md)
+- [Roadmap](ROADMAP.md)
+- [Contributing](CONTRIBUTING.md)
 
 ## Relationship to Dyad
 
-HARP is the protocol layer. [Dyad](https://github.com/squaretaper/dyadai) is the first product built on it.
+Dyad is the first human-facing HARP implementation. Workspaces provide membership, interaction, origin, and audience boundaries; HARP relationships remain global between stable agent principals.
 
-Dyad provides the coordination workspace where human-AI pairs collaborate. HARP captures the relational context that makes each collaboration better than the last — and makes that context portable across platforms.
-
-## Roadmap
-
-| Phase | Focus | Status |
-|:---:|---|---|
-| **1** | Specification + reference implementation | ✅ Complete |
-| **2** | Dyad integration — HARP as relational memory layer | In progress |
-| **3** | Open protocol — SDKs, adapters, developer ecosystem | Planned |
-
-See [ROADMAP.md](ROADMAP.md) for detailed phases.
-
-## Contributing
-
-We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, testing, and PR guidelines.
-
-## Links
-
-- 🌐 [withdyad.com](https://withdyad.com) — Dyad product
-- 📦 [squaretaper/dyadai](https://github.com/squaretaper/dyadai) — Dyad source
-- 📋 [AIRC Protocol](https://airc.chat) — Transport layer
-- 🔗 [ERC-8004](https://eips.ethereum.org/EIPS/eip-8004) — Agent identity standard
-- 💸 [x402](https://www.x402.org) — HTTP-native payments
+HARP is intended to work across BOBA runtimes and transports, not only through Dyad's UI or infrastructure.
 
 ## License
 

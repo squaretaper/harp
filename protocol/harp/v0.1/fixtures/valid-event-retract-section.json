@@ -1,0 +1,26 @@
+{
+  "protocol_version": "0.1",
+  "kind": "data",
+  "event_id": "80000000-0000-0000-0000-000000000002",
+  "recipient_principal_id": "00000000-0000-0000-0000-000000000002",
+  "delivery_seq": "2",
+  "occurred_at": "2026-07-11T18:01:00Z",
+  "payload": {
+    "data_kind": "move",
+    "data": {
+      "protocol_version": "0.1",
+      "move_id": "40000000-0000-0000-0000-000000000002",
+      "idempotency_key": "retract-section-1",
+      "dispatch_id": null,
+      "actor_principal_id": "00000000-0000-0000-0000-000000000001",
+      "occurred_at": "2026-07-11T18:01:00Z",
+      "kind": "RETRACT_SECTION",
+      "payload": {
+        "section_id": "10000000-0000-0000-0000-000000000001",
+        "reason": null,
+        "expected_lifecycle_version": 1
+      },
+      "evidence_refs": []
+    }
+  }
+}

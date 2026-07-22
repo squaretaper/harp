@@ -1,0 +1,17 @@
+{
+  "protocol_version": "0.1",
+  "move_id": "40000000-0000-0000-0000-000000000001",
+  "idempotency_key": "move-0001",
+  "dispatch_id": "50000000-0000-0000-0000-000000000001",
+  "actor_principal_id": "00000000-0000-0000-0000-000000000001",
+  "occurred_at": "2026-07-11T18:00:00Z",
+  "kind": "REQUEST_CONTRIBUTION",
+  "payload": {
+    "obligation_id": "60000000-0000-0000-0000-000000000001",
+    "target_principal_id": "00000000-0000-0000-0000-000000000002",
+    "topic": "Review",
+    "request": "Review the proposal",
+    "deadline_at": null
+  },
+  "evidence_refs": []
+}

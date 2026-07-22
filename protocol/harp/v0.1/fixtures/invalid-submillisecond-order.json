@@ -1,0 +1,61 @@
+{
+  "protocol_version": "0.1",
+  "section_id": "10000000-0000-0000-0000-000000000001",
+  "pair_principal_ids": [
+    "00000000-0000-0000-0000-000000000001",
+    "00000000-0000-0000-0000-000000000002"
+  ],
+  "author_principal_id": "00000000-0000-0000-0000-000000000001",
+  "section_type": "interaction",
+  "content": "Café\r\n  shared observation  ",
+  "tags": [
+    "beta"
+  ],
+  "evidence_refs": [
+    "dyad://message/abc",
+    "git:abc123:file.ts#L1"
+  ],
+  "supersedes_section_id": null,
+  "origin_kind": "workspace",
+  "origin_workspace_id": "20000000-0000-0000-0000-000000000001",
+  "origin_chat_id": null,
+  "audience_scope": "origin_workspace",
+  "lifecycle": {
+    "state": "active",
+    "version": 1,
+    "retracted_at": null,
+    "retracted_by_principal_id": null
+  },
+  "acceptance": {
+    "as_of": "2026-07-11T18:00:00.000001000Z",
+    "rows": [
+      {
+        "principal_id": "00000000-0000-0000-0000-000000000001",
+        "state": "accepted",
+        "version": 1,
+        "updated_at": "2026-07-11T18:00:00.000002000Z"
+      },
+      {
+        "principal_id": "00000000-0000-0000-0000-000000000002",
+        "state": "pending",
+        "version": 1,
+        "updated_at": "2026-07-11T18:00:00.000002000Z"
+      }
+    ],
+    "events": [
+      {
+        "event_id": "30000000-0000-0000-0000-000000000001",
+        "event_type": "proposed",
+        "actor_principal_id": "00000000-0000-0000-0000-000000000001",
+        "prior_state": null,
+        "next_state": null,
+        "reason": null,
+        "created_at": "2026-07-11T18:00:00.000002000Z",
+        "state_version": 1
+      }
+    ]
+  },
+  "content_hash_algorithm": "sha256-jcs-nfc-v1",
+  "content_hash": "sha256-jcs-nfc-v1:3b22d512c52ebca0ddb3dbc1808782f01e9563712135f04a0319265e49a091b1",
+  "created_at": "2026-07-11T18:00:00.000000000Z"
+}
