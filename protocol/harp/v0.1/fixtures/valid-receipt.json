@@ -1,0 +1,33 @@
+{
+  "protocol_version": "0.1",
+  "kind": "harp_work_record",
+  "dispatch_id": "50000000-0000-0000-0000-000000000001",
+  "generated_at": "2026-07-11T18:00:00Z",
+  "acceptance_as_of": "2026-07-11T18:00:00Z",
+  "disclosure": {
+    "view": "pair_private",
+    "workspace_id": null,
+    "generated_for_principal_id": "00000000-0000-0000-0000-000000000001"
+  },
+  "participants": [
+    "00000000-0000-0000-0000-000000000001",
+    "00000000-0000-0000-0000-000000000002"
+  ],
+  "obligation_transitions": [],
+  "contributions": [],
+  "final": {
+    "message_id": "90000000-0000-0000-0000-000000000001",
+    "content_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+  },
+  "evidence_refs": [],
+  "harp_updates": [
+    {
+      "section_id": "10000000-0000-0000-0000-000000000001",
+      "classification": "attributed_observation",
+      "audience_scope": "origin_workspace",
+      "content_hash": "sha256-jcs-nfc-v1:3b22d512c52ebca0ddb3dbc1808782f01e9563712135f04a0319265e49a091b1"
+    }
+  ],
+  "identity_citations": [],
+  "redactions": []
+}

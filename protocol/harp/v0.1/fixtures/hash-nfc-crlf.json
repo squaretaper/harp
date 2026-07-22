@@ -1,0 +1,14 @@
+{
+  "input": {
+    "protocol_version": "0.1",
+    "section_type": "interaction",
+    "content": "Café\r\n  shared observation  ",
+    "evidence_refs": [
+      "dyad://message/abc",
+      "git:abc123:file.ts#L1"
+    ]
+  },
+  "normalized_content": "Café\n  shared observation  ",
+  "canonical_utf8": "{\"content\":\"Café\\n  shared observation  \",\"evidence_refs\":[\"dyad://message/abc\",\"git:abc123:file.ts#L1\"],\"protocol_version\":\"0.1\",\"section_type\":\"interaction\"}",
+  "content_hash": "sha256-jcs-nfc-v1:3b22d512c52ebca0ddb3dbc1808782f01e9563712135f04a0319265e49a091b1"
+}

@@ -1,0 +1,58 @@
+{
+  "protocol_version": "0.1",
+  "kind": "data",
+  "event_id": "80000000-0000-0000-0000-000000000001",
+  "recipient_principal_id": "00000000-0000-0000-0000-000000000002",
+  "delivery_seq": "1",
+  "occurred_at": "2026-07-11T18:00:00Z",
+  "payload": {
+    "data_kind": "dispatch",
+    "data": {
+      "protocol_version": "0.1",
+      "dispatch_id": "50000000-0000-0000-0000-000000000001",
+      "workspace_id": "20000000-0000-0000-0000-000000000001",
+      "chat_id": "70000000-0000-0000-0000-000000000001",
+      "trigger_message_ref": "dyad://message/trigger",
+      "response_mode_requested": "synthesis",
+      "response_mode_effective": "synthesis",
+      "lead_principal_id": "00000000-0000-0000-0000-000000000001",
+      "dispatch_status": "collecting",
+      "barrier_status": "open",
+      "deadline_at": null,
+      "final_message_id": null,
+      "version": 1,
+      "participants": [
+        {
+          "principal_id": "00000000-0000-0000-0000-000000000001",
+          "role": "lead",
+          "state": "selected",
+          "version": 1
+        },
+        {
+          "principal_id": "00000000-0000-0000-0000-000000000002",
+          "role": "contributor",
+          "state": "selected",
+          "version": 1
+        }
+      ],
+      "obligations": [
+        {
+          "obligation_id": "60000000-0000-0000-0000-000000000001",
+          "assignee_principal_id": "00000000-0000-0000-0000-000000000002",
+          "kind": "contribution",
+          "state": "pending",
+          "deadline_at": null,
+          "version": 1
+        }
+      ],
+      "context_snapshot": {
+        "ref": "dyad://dispatch/context/1",
+        "hash_algorithm": "sha256",
+        "hash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "byte_size": 128
+      },
+      "created_at": "2026-07-11T18:00:00Z",
+      "updated_at": "2026-07-11T18:00:00Z"
+    }
+  }
+}

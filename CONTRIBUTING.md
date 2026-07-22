@@ -1,93 +1,124 @@
 # Contributing to HARP
 
-Thanks for your interest in HARP! This document covers how to set up a development environment, run tests, and submit changes.
+HARP v0.1 is a draft wire contract. Contributions should improve interoperability, clarity, and fail-closed behavior without making unimplemented distribution claims.
 
-## Development Setup
+## Setup
+
+Requirements:
+
+- Python 3.11+
+- Git
 
 ```bash
-# Clone the repo
 git clone https://github.com/squaretaper/harp.git
 cd harp
-
-# Install dependencies
-npm install
-
-# Build
-npm run build
-
-# Run tests
-npm test
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install -r requirements-dev.txt
+python scripts/validate_protocol.py
 ```
 
-### Requirements
+The validator checks:
 
-- **Node.js** ≥ 18
-- **npm** ≥ 9
+- every JSON Schema is itself valid Draft 2020-12;
+- valid fixtures pass their schemas and semantic rules;
+- each negative fixture fails for its intended schema or semantic reason;
+- event-bundled dispatch and move schemas are identical to the standalone schemas;
+- lowercase canonical UUID and exact, up-to-nine-digit leap-second-free timestamp handling;
+- replay-equivalent acceptance/lifecycle rows, versions, actors, and times, including terminal retraction;
+- duplicate JSON members and non-standard/non-finite JSON numbers are rejected;
+- the canonical NFC/CRLF hash vector;
+- the 1 MiB fixture envelope bound; and
+- relative Markdown links.
 
-## Project Structure
+## Repository structure
 
-```
-src/
-├── index.ts          # Public API exports
-├── harp.ts           # Core client library
-├── types.ts          # Type definitions
-└── adapters/         # Platform adapters
-tests/                # Vitest test suite
-examples/             # Runnable examples
-```
-
-## Running Tests
-
-```bash
-# Run all tests
-npm test
-
-# Watch mode (re-runs on file changes)
-npm run test:watch
-
-# With coverage
-npm run test:coverage
-```
-
-## Code Style
-
-- **TypeScript strict mode** — no `any`, no implicit returns
-- **JSDoc on public APIs** — every exported function and class should have a doc comment
-- **Immutable operations** — document operations return new objects, never mutate
-- **Descriptive names** — `createSection()` not `mkSec()`
-
-## Submitting Changes
-
-1. **Fork** the repository
-2. **Create a branch** from `main`: `git checkout -b feature/my-change`
-3. **Make your changes** — add tests for new functionality
-4. **Run the full suite**: `npm run build && npm test`
-5. **Commit** with a descriptive message (see below)
-6. **Open a Pull Request** against `main`
-
-### Commit Messages
-
-Use clear, descriptive commit messages:
-
-```
-feat: add A2A transport adapter
-fix: handle edge case in entity ID normalization
-test: add round-trip serialization tests
-docs: clarify privacy layer semantics
+```text
+protocol/harp/v0.1/
+├── README.md
+├── schema/
+│   ├── section.schema.json
+│   ├── move.schema.json
+│   ├── dispatch.schema.json
+│   ├── event.schema.json
+│   └── receipt.schema.json
+└── fixtures/
+    ├── valid-*.json
+    ├── invalid-audience.json
+    └── hash-nfc-crlf.json
+scripts/
+└── validate_protocol.py
+SPEC.md
+DESIGN.md
+SECURITY.md
+MIGRATION.md
+ECOSYSTEM.md
+ROADMAP.md
 ```
 
-## What to Work On
+## Source of truth
 
-- Check [open issues](https://github.com/squaretaper/harp/issues) for `good-first-issue` labels
-- Storage backends (IPFS, local filesystem)
-- Additional platform adapters
-- Performance benchmarks
-- Documentation improvements
+The files under `protocol/harp/v0.1/` are normative. Explanatory docs must agree with those files.
 
-## Protocol Changes
+When changing a wire document:
 
-Changes to the protocol spec (`SPEC.md`), security model (`SECURITY.md`), or core types (`src/types.ts`) require discussion before implementation. Please open an issue first.
+1. update its JSON Schema;
+2. update or add positive and negative fixtures;
+3. update semantic validation if JSON Schema cannot express the rule;
+4. update `SPEC.md` and migration notes if behavior changed;
+5. run the validator; and
+6. explain compatibility impact in the pull request.
+
+Do not change only prose when the intended behavior is a wire-format change.
+
+## Compatibility
+
+Before v1.0, breaking changes are allowed but must be explicit. A breaking change requires one of:
+
+- a new protocol version directory; or
+- an unreleased-draft reset with a clear migration note.
+
+Never silently broaden v0.1 parsing to accept unknown core fields or move kinds. Open data is limited to the bounded `extensions` object and the explicitly documented opaque summary/detail maps. Opaque-map keys do not create portable core semantics.
+
+## Security review checklist
+
+For every protocol change, ask:
+
+- Does this change principal authentication or authorization?
+- Can it leak pair or origin-workspace data through query, context, events, UI, or receipts?
+- Can retries duplicate a side effect?
+- Can stale versions win a race?
+- Can a transport gap become silent?
+- Can two public finals be produced?
+- Does it expand untrusted prompt content or evidence dereferencing?
+- Are size, depth, and cardinality bounded?
+- Does the fixture suite include a failure case?
+
+See [SECURITY.md](SECURITY.md).
+
+## Pull requests
+
+1. Create a branch from `main`.
+2. Keep each change narrow and reviewable.
+3. Run `python scripts/validate_protocol.py`.
+4. Include the compatibility and security impact in the PR description.
+5. Link any issue or implementation change that motivated the protocol change.
+
+Suggested commit prefixes:
+
+```text
+spec: add a v0.1 negative receipt fixture
+docs: clarify origin-workspace disclosure
+security: reject duplicate acceptance principals
+ci: validate schema formats
+```
+
+## SDK and package claims
+
+Do not add installation instructions for a package that has not been published and independently install-tested from the public registry.
+
+An SDK belongs in this repository only if it implements the current wire contract and passes all normative fixtures. Binding-specific clients should normally live in their implementation repositories.
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the [MIT License](LICENSE).
+By contributing, you agree that your contribution is licensed under the [MIT License](LICENSE).
